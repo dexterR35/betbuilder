@@ -3,7 +3,7 @@ const fetchMatches = async () => {
     {
       id: 1232001,
       teams: "Spania vs Franța",
-      date: "15-10-2024",
+      date: "12-10-2024",
       startAt: "12:10",
       odds: { 1: 3.12, X: 1.23, 2: 2.12 },
     },
@@ -62,64 +62,65 @@ const formatToRomanianTime = (date) => {
 // Helper to format any date into Romanian format
 // Helper to format any date into Romanian format
 const formatToRomanianDate = (dateInput) => {
-    let dateObj;
-  
-    // Check if the input is a string in the format "DD-MM-YYYY"
-    if (typeof dateInput === "string" && /^\d{2}-\d{2}-\d{4}$/.test(dateInput)) {
-      const [day, month, year] = dateInput.split("-");
-      // Convert to "YYYY-MM-DD" which the Date constructor understands
-      const isoFormattedDate = `${year}-${month}-${day}`;
-      dateObj = new Date(isoFormattedDate);
-    } else {
-      dateObj = new Date(dateInput); // Already a Date object
-    }
-  
-    return new Intl.DateTimeFormat("ro-RO", {
-      timeZone: "Europe/Bucharest",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(dateObj);
-  };
-  
-  
-  // Main function to render matches
-  const renderMatches = async () => {
-    const matches = await fetchMatches();
-    const container = $("#matches-container");
-    container.empty();
-  
-    // Get current date and tomorrow's date in Romanian time and format them
-    const currentDate = new Date();
-    const tomorrowDate = new Date(currentDate);
-    tomorrowDate.setDate(currentDate.getDate() + 1);
-  
-    // Format current and tomorrow's dates into Romanian format
-    const roFormattedCurrentDate = formatToRomanianDate(currentDate);
-    const roFormattedTomorrowDate = formatToRomanianDate(tomorrowDate);
-  
-    console.log(`Current Romanian Date: ${roFormattedCurrentDate}`);
-    console.log(`Tomorrow's Romanian Date: ${roFormattedTomorrowDate}`);
-  
-    // Sort matches by date, but using our Romanian date formatting function
-    const sortedMatches = matches.sort(
-      (a, b) => new Date(formatToRomanianDate(a.date)) - new Date(formatToRomanianDate(b.date))
-    );
-  
-    // Logic to render main and secondary cards
-    let hasMainCard = false;
-    let secondaryCardsContainer = $(
-      '<div class="secondary-cards-container"></div>'
-    );
-  
-    sortedMatches.forEach((match) => {
-      const matchDateFormatted = formatToRomanianDate(match.date);
-      console.log(`Match Date (Formatted): ${matchDateFormatted}`);
-  
-      // Check if the match is for tomorrow
-      if (!hasMainCard && matchDateFormatted === roFormattedTomorrowDate) {
-        // Render the main card for the match that is happening tomorrow
-        const mainCard = $(`
+  let dateObj;
+
+  // Check if the input is a string in the format "DD-MM-YYYY"
+  if (typeof dateInput === "string" && /^\d{2}-\d{2}-\d{4}$/.test(dateInput)) {
+    const [day, month, year] = dateInput.split("-");
+    // Convert to "YYYY-MM-DD" which the Date constructor understands
+    const isoFormattedDate = `${year}-${month}-${day}`;
+    dateObj = new Date(isoFormattedDate);
+  } else {
+    dateObj = new Date(dateInput); // Already a Date object
+  }
+
+  return new Intl.DateTimeFormat("ro-RO", {
+    timeZone: "Europe/Bucharest",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(dateObj);
+};
+
+// Main function to render matches
+const renderMatches = async () => {
+  const matches = await fetchMatches();
+  const container = $("#matches-container");
+  container.empty();
+
+  // Get current date and tomorrow's date in Romanian time and format them
+  const currentDate = new Date();
+  const tomorrowDate = new Date(currentDate);
+  tomorrowDate.setDate(currentDate.getDate() + 1);
+
+  // Format current and tomorrow's dates into Romanian format
+  const roFormattedCurrentDate = formatToRomanianDate(currentDate);
+  const roFormattedTomorrowDate = formatToRomanianDate(tomorrowDate);
+
+  console.log(`Current Romanian Date: ${roFormattedCurrentDate}`);
+  console.log(`Tomorrow's Romanian Date: ${roFormattedTomorrowDate}`);
+
+  // Sort matches by date, but using our Romanian date formatting function
+  const sortedMatches = matches.sort(
+    (a, b) =>
+      new Date(formatToRomanianDate(a.date)) -
+      new Date(formatToRomanianDate(b.date))
+  );
+
+  // Logic to render main and secondary cards
+  let hasMainCard = false;
+  let secondaryCardsContainer = $(
+    '<div class="secondary-cards-container"></div>'
+  );
+
+  sortedMatches.forEach((match) => {
+    const matchDateFormatted = formatToRomanianDate(match.date);
+    console.log(`Match Date (Formatted): ${matchDateFormatted}`);
+
+    // Check if the match is for tomorrow
+    if (!hasMainCard && matchDateFormatted === roFormattedTomorrowDate) {
+      // Render the main card for the match that is happening tomorrow
+      const mainCard = $(`
           <div class="main-card">
               <div class="card-content">
                   <div class="info">
@@ -141,11 +142,11 @@ const formatToRomanianDate = (dateInput) => {
               </div>
           </div>
         `);
-        container.append(mainCard);
-        hasMainCard = true;
-      } else {
-        // Render the remaining matches as secondary cards
-        const secondaryCard = $(`
+      container.append(mainCard);
+      hasMainCard = true;
+    } else {
+      // Render the remaining matches as secondary cards
+      const secondaryCard = $(`
           <div class="secondary-card">
               <div class="card-content">
                   <div class="info">
@@ -167,14 +168,22 @@ const formatToRomanianDate = (dateInput) => {
               </div>
           </div>
         `);
-        secondaryCardsContainer.append(secondaryCard);
-      }
-    });
-  
-    // Append the secondary cards container after the main card
-    container.append(secondaryCardsContainer);
-  };
-  
+      secondaryCardsContainer.append(secondaryCard);
+    }
+  });
+
+  // Append the secondary cards container after the main card
+  container.append(secondaryCardsContainer);
+  $(".bet-option").on("click", function () {
+    const teams = $(this).data("teams");
+    const betType = $(this).data("choice");
+    const odds = $(this).data("odds");
+    const ids = $(this).data("id");
+
+    selectBet(teams, betType, odds, ids);
+  });
+};
+
 const selectBet = (teams, betType, odds, ids) => {
   if (isModalOpen) {
     return;

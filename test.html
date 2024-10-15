@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Share Image Example</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css" integrity="sha512-q3eWabyZPc1XTCmF+8/LuE1ozpg5xxn7iO89yfSOd5/oKvyqLngoNGsx8jq92Y8eXJ/IRxQbEC+FGSYxtk2oiw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    img {
+      width: 300px;
+      height: auto;
+      display: block;
+      margin: 1rem auto;
+    }
+    #share-container span {
+      display: block;
+      margin: 3rem auto;
+      font-size: 50px;
+      padding: 1rem;
+      margin: 1rem;
+    }
+    #share-buttons i {
+      font-size: 50px;
+      margin: 20px;
+    }
+    .facebook {
+      color: #3b5998;
+    }
+    .twitter {
+      color: #55acee;
+    }
+    .linkedin {
+      color: #0077b5;
+    }
+    .reddit {
+      color: #cb2027;
+    }
+    .whatsapp {
+      color: #25D366;
+    }
+    .telegram {
+      color: #229ED9;
+    }
+    .facebook, .twitter, .linkedin, .reddit, .whatsapp, .telegram {
+      opacity: 0.6;
+    }
+    .facebook:hover, .twitter:hover, .linkedin:hover, .reddit:hover, .whatsapp:hover, .telegram:hover {
+      opacity: 0.9;
+    }
+    #share-button {
+      font-size: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Share </h1>
+
+  <!-- Example image to share -->
+  <img src="https://go-testing.netbet.ro/lp-asset/netbetro/casino/batalia-streamerilor-new/og-image.png" alt="Your Image">
+
+  <!-- Native Share Button (for Mobile Devices) -->
+  <button id="share-button">Share</button>
+
+  <!-- Social Media Sharing Buttons -->
+  <div id="share-buttons">
+      <!-- facebook -->
+      <a class="facebook" target="_blank" href="https://www.facebook.com/share.php?u=https://go-testing.netbet.ro/lp-asset/netbetro/casino/batalia-streamerilor-new/og-image.png">
+        <i class="fab fa-facebook"></i>
+      </a>
+
+      <!-- whatsapp-->
+      <a class="whatsapp" target="_blank" href="https://api.whatsapp.com/send?text=Check%20out%20this%20image!%20https://go-testing.netbet.ro/lp-asset/netbetro/casino/batalia-streamerilor-new/og-image.png">
+        <i class="fab fa-whatsapp"></i>
+      </a>
+    
+      <!-- telegram-->
+      <a class="telegram" target="_blank" href="https://telegram.me/share/url?url=https://go-testing.netbet.ro/lp-asset/netbetro/casino/batalia-streamerilor-new/og-image.png&text=Check%20out%20this%20image!">
+        <i class="fab fa-telegram"></i>
+      </a>
+  </div>
+
+<script>
+       const shareButton = document.getElementById('share-button');
+    const imageElement = document.getElementById('image-to-share');
+
+    shareButton.addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          // Access the local image file from the page
+          const imgSrc = imageElement.src;
+
+          // Assuming the image file is available in your resources (e.g., your server or locally)
+          const fileName = imgSrc.split('/').pop(); // Get the file name from the src attribute
+          
+          // Create a File object from the image (assuming it's a JPEG image here)
+          const file = new File([imageElement.src], fileName, { type: 'image/jpeg' });
+
+          await navigator.share({
+            title: 'Cool Image',
+            text: 'Check out this image!',
+            files: [file]
+          });
+          
+          console.log('Image shared successfully');
+        } catch (error) {
+          console.error('Error sharing image', error);
+        }
+      } else {
+        alert('Web Share API is not supported in your browser.');
+      }
+    });
+</script>
+
+</body>
+</html>

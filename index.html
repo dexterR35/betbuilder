@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <title>Betting App</title>
     <style>
@@ -161,7 +160,7 @@
         outline: 0;
         margin: 10px auto;
         cursor: pointer;
-    }
+      }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.7/dist/html2canvas.min.js"></script>
@@ -175,14 +174,264 @@
       <div id="qrcode"></div>
       <!-- QR code will be displayed here -->
       <button id="share-btn">Share to social /inprogress</button>
-      <br>
-   <button id="generate-img-btn">Generate Image</button>
-  <button id="download-img-btn" style="display:flex;">Download Image</button>
+      <br />
+      <button id="generate-img-btn">Generate Image</button>
     </div>
-    <canvas id="ticket-canvas" style="display:none;"></canvas>
-    <a id="download-link" style="display:none;">Download Ticket</a>
-    <!-- Legăm fișierul JavaScript -->
-    <script src="./index.js"></script>
+    <canvas id="ticket-canvas" style="display: none"></canvas>
+    <a id="download-link" style="display: none">Download Ticket</a>
 
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+      import {
+        ref,
+        uploadBytes,
+        getDownloadURL,
+        getStorage,
+      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+      import {
+        getDatabase,
+        ref as dbRef,
+        set,
+        push,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+      // configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAjgn2sejJxAyiE1mOitaZo7l6RwPyw_uY",
+        authDomain: "nbsportnb.firebaseapp.com",
+        projectId: "nbsportnb",
+        storageBucket: "nbsportnb.appspot.com",
+        messagingSenderId: "386727042279",
+        appId: "1:386727042279:web:d39f4f6769b4df6369d642",
+        measurementId: "G-D6XBGY7ZG4",
+        databaseURL:
+          "https://nbsportnb-default-rtdb.europe-west1.firebasedatabase.app/",
+      };
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const storage = getStorage(app);
+      const realtimeDb = getDatabase(app); 
+
+      let isModalOpen = false;
+      const closePopup = () => {
+        const popup = $("#popup");
+        popup.hide();
+        isModalOpen = false;
+      };
+      // Function to fetch matches from Google Sheets
+      const fetchMatches = async () => {
+        const sheetUrl =
+          "https://docs.google.com/spreadsheets/d/13OkmkMb4Bak7uLQ7TKvkAhvJ1DeBEO7GHi3Njl9tnDA/gviz/tq?tqx=out:csv&sheet=Sheet1";
+        const response = await fetch(sheetUrl);
+        const textData = await response.text();
+        const rows = textData.split("\n").slice(1);
+        const matches = rows.map((row) => {
+          const cols = row.split(",").map((col) => col.replace(/(^"|"$)/g, ""));
+          return {
+            date: cols[0],
+            startAt: cols[1],
+            teams: `${cols[2]} vs ${cols[3]}`,
+            odds: {
+              1: cols[4] !== "TBD" ? cols[4] : "TBD",
+              X: cols[5] !== "TBD" ? cols[5] : "TBD",
+              2: cols[6] !== "TBD" ? cols[6] : "TBD",
+            },
+            boostOdds: {
+              1: cols[7] !== "TBD" ? cols[7] : "TBD",
+              X: cols[8] !== "TBD" ? cols[8] : "TBD",
+              2: cols[9] !== "TBD" ? cols[9] : "TBD",
+            },
+            id: cols[10] ? cols[10] : "TBD",
+          };
+        });
+        return matches;
+      };
+
+//render games
+      const renderMatches = async () => {
+        const matches = await fetchMatches();
+
+        matches.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const container = $("#matches-container");
+        container.empty();
+        matches.forEach((match) => {
+          const card = $(`
+          <div class="main-card">
+            <div class="card-content">
+              <div class="info">
+                <p class="t-teams">${match.teams}</p>
+                <p>${match.date}</p>
+                <p>${match.startAt}</p>
+                <p>id: ${match.id}</p>
+              </div>
+              <div class="bet_c">
+                <div class="bet-option" data-id="${match.id}" data-teams="${match.teams}" data-choice="1" data-odds="${match.odds["1"]}" data-boost-odds="${match.boostOdds["1"]}">
+                  <div><p>1</p> <p>${match.odds["1"]}</p></div>
+                </div>
+                <div class="bet-option" data-id="${match.id}" data-teams="${match.teams}" data-choice="X" data-odds="${match.odds["X"]}" data-boost-odds="${match.boostOdds["X"]}">
+                  <div><p>X</p> <p>${match.odds["X"]}</p></div>
+                </div>
+                <div class="bet-option" data-id="${match.id}" data-teams="${match.teams}" data-choice="2" data-odds="${match.odds["2"]}" data-boost-odds="${match.boostOdds["2"]}">
+                  <div><p>2</p> <p>${match.odds["2"]}</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+          container.append(card);
+        });
+
+        container.on("click", ".bet-option", function () {
+          const teams = $(this).data("teams");
+          const betType = $(this).data("choice");
+          const odds = $(this).data("odds") || "N/A";
+          const boostOdds = $(this).data("boost-odds") || "N/A";
+          const ids = $(this).data("id");
+
+          console.log(
+            `Selected Teams: ${teams}, Bet Type: ${betType}, Odds: ${odds}, Boosted Odds: ${boostOdds}`
+          );
+          selectBet(teams, betType, odds, boostOdds, ids);
+        });
+      };
+
+      const selectBet = (teams, betType, odds, boostOdds, ids) => {
+        if (isModalOpen) return;
+        const popup = $("#popup");
+        const selectedInfo = $("#selected-info");
+        const ticketContent = `
+        <h3>Bilet Pariu ${ids}</h3>
+        <p><strong>Meci:</strong> ${teams}</p>
+        <p><strong>Tip pariu:</strong> ${betType}</p>
+        <p><strong>Cotă standard:</strong> ${odds}</p>
+        <p><strong>Cotă boostată:</strong> ${boostOdds}</p>
+      `;
+        selectedInfo.html(ticketContent);
+        popup.show();
+        isModalOpen = true;
+        $("#generate-img-btn").show();
+        $("#share-btn").hide();
+      };
+
+      const generateTicketImage = (
+        teams,
+        betType,
+        odds,
+        boostOdds,
+        matchId
+      ) => {
+        const canvas = document.getElementById("ticket-canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = 400;
+        canvas.height = 300;
+
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#000";
+        ctx.font = "20px Arial";
+        ctx.fillText("Bilet Pariu " + matchId, 20, 40);
+        ctx.font = "16px Arial";
+        ctx.fillText(`Meci: ${teams}`, 20, 80);
+        ctx.fillText(`Tip pariu: ${betType}`, 20, 110);
+        ctx.fillText(`Cota standard: ${odds}`, 20, 140);
+        ctx.fillText(`Cota boostata: ${boostOdds}`, 20, 170);
+
+        const currentDate = new Date().toLocaleDateString("ro-RO");
+        ctx.fillText(`Data generarii: ${currentDate}`, 20, 200);
+
+        // Convert canvas to Blob
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            // Create an auto-generated ID for the parent folder in the database
+            const ticketRef = dbRef(realtimeDb, `tickets`);
+            const newTicketRef = push(ticketRef); // This will generate an auto ID
+            const autoId = newTicketRef.key; // Get the auto-generated ID (parent folder name)
+
+            // Use the match ID image file name inside
+            const storageRef = ref(
+              storage,
+              `bet-tickets/${autoId}/${matchId}.png`
+            );
+            // Upload the Blob to Firebase Storage
+            uploadBytes(storageRef, blob)
+              .then(async (snapshot) => {
+                console.log("Uploaded a blob or file!");
+                // Get the download URL after the file is uploaded
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log("File available at", downloadURL);
+
+                set(newTicketRef, {
+                  id: matchId,
+                  teams: teams,
+                  betType: betType,
+                  odds: odds,
+                  boostOdds: boostOdds,
+                  imageUrl: downloadURL,
+                  createdAt: new Date().toISOString("ro-RO"),
+                  timestamp: serverTimestamp(),
+                })
+                  .then(() => {
+                    console.log("Ticket metadata saved to Realtime Database.");
+                    $("#generate-img-btn").hide();
+                    $("#share-btn").show();
+                    $("#share-btn").on("click", () => {
+                      const fbShareURL = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                        downloadURL
+                      )}`;
+                      window.open(fbShareURL, "_blank");
+                    });
+                  })
+                  .catch((error) =>
+                    console.error(
+                      "Error saving metadata to Realtime Database:",
+                      error
+                    )
+                  );
+              })
+              .catch((error) =>
+                console.error("Error uploading to Firebase Storage:", error)
+              );
+          } else {
+            console.error("Canvas Blob creation failed.");
+          }
+        }, "image/png");
+      };
+
+      $("#generate-img-btn").on("click", function () {
+        const generateButton = $(this);
+
+        // Disable the button to prevent multiple clicks within 3 seconds
+        generateButton.prop("disabled", true);
+
+        const teams = $("#selected-info").find("p").eq(0).text().split(": ")[1];
+        const betType = $("#selected-info")
+          .find("p")
+          .eq(1)
+          .text()
+          .split(": ")[1];
+        const odds = $("#selected-info").find("p").eq(2).text().split(": ")[1];
+        const boostOdds = $("#selected-info")
+          .find("p")
+          .eq(3)
+          .text()
+          .split(": ")[1];
+        const ids = $("#selected-info").find("h3").text().split(" ")[2];
+
+        generateTicketImage(teams, betType, odds, boostOdds, ids);
+
+        // Set a timeout to re-enable the button after 3 seconds
+        setTimeout(() => {
+          generateButton.prop("disabled", false); // Re-enable the button
+        }, 3000); // 3000 milliseconds = 3 seconds
+      });
+
+      $(document).ready(renderMatches);
+    </script>
   </body>
 </html>

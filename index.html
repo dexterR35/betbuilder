@@ -164,6 +164,8 @@
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.7/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   </head>
   <body>
     <!-- Container pentru carduri -->
@@ -213,161 +215,136 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
       const storage = getStorage(app);
-      const realtimeDb = getDatabase(app); 
+      const realtimeDb = getDatabase(app);
+      
 
       let isModalOpen = false;
+
+      // Store match data in an object
+      const matchesData = {};
+
       const closePopup = () => {
         const popup = $("#popup");
         popup.hide();
         isModalOpen = false;
       };
-      // Function to fetch matches from Google Sheets
+
+      // Error handling for fetching matches from Google Sheets
       const fetchMatches = async () => {
-        const sheetUrl =
-          "https://docs.google.com/spreadsheets/d/13OkmkMb4Bak7uLQ7TKvkAhvJ1DeBEO7GHi3Njl9tnDA/gviz/tq?tqx=out:csv&sheet=Sheet1";
-        const response = await fetch(sheetUrl);
-        const textData = await response.text();
-        const rows = textData.split("\n").slice(1);
-        const matches = rows.map((row) => {
-          const cols = row.split(",").map((col) => col.replace(/(^"|"$)/g, ""));
-          return {
-            date: cols[0],
-            startAt: cols[1],
-            teams: `${cols[2]} vs ${cols[3]}`,
-            odds: {
-              1: cols[4] !== "TBD" ? cols[4] : "TBD",
-              X: cols[5] !== "TBD" ? cols[5] : "TBD",
-              2: cols[6] !== "TBD" ? cols[6] : "TBD",
-            },
-            boostOdds: {
-              1: cols[7] !== "TBD" ? cols[7] : "TBD",
-              X: cols[8] !== "TBD" ? cols[8] : "TBD",
-              2: cols[9] !== "TBD" ? cols[9] : "TBD",
-            },
-            id: cols[10] ? cols[10] : "TBD",
-          };
-        });
-        return matches;
+        try {
+          const sheetUrl =
+            "https://docs.google.com/spreadsheets/d/13OkmkMb4Bak7uLQ7TKvkAhvJ1DeBEO7GHi3Njl9tnDA/gviz/tq?tqx=out:csv&sheet=Sheet1";
+          const response = await fetch(sheetUrl);
+          if (!response.ok) {
+            throw new Error("Failed to fetch match data");
+          }
+          const textData = await response.text();
+          const rows = textData.split("\n").slice(1);
+
+          const matches = rows.map((row) => {
+            const cols = row
+              .split(",")
+              .map((col) => col.replace(/(^"|"$)/g, ""));
+            return {
+              date: cols[0],
+              startAt: cols[1],
+              teams: `${cols[2]} vs ${cols[3]}`,
+              odds: {
+                1: cols[4] !== "TBD" ? cols[4] : "TBD",
+                X: cols[5] !== "TBD" ? cols[5] : "TBD",
+                2: cols[6] !== "TBD" ? cols[6] : "TBD",
+              },
+              boostOdds: {
+                1: cols[7] !== "TBD" ? cols[7] : "TBD",
+                X: cols[8] !== "TBD" ? cols[8] : "TBD",
+                2: cols[9] !== "TBD" ? cols[9] : "TBD",
+              },
+              id: cols[10] ? cols[10] : "TBD",
+              sessionId: cols[11] ? String(cols[11]) : "TBD",
+            };
+          });
+          return matches;
+        } catch (error) {
+          console.error("Error fetching matches:", error);
+          alert("Failed to fetch match data. Please try again later.");
+          return [];
+        }
       };
 
-//render games
-      const renderMatches = async () => {
-        const matches = await fetchMatches();
-
-        matches.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-        const container = $("#matches-container");
-        container.empty();
-        matches.forEach((match) => {
-          const card = $(`
-          <div class="main-card">
-            <div class="card-content">
-              <div class="info">
-                <p class="t-teams">${match.teams}</p>
-                <p>${match.date}</p>
-                <p>${match.startAt}</p>
-                <p>id: ${match.id}</p>
-              </div>
-              <div class="bet_c">
-                <div class="bet-option" data-id="${match.id}" data-teams="${match.teams}" data-choice="1" data-odds="${match.odds["1"]}" data-boost-odds="${match.boostOdds["1"]}">
-                  <div><p>1</p> <p>${match.odds["1"]}</p></div>
-                </div>
-                <div class="bet-option" data-id="${match.id}" data-teams="${match.teams}" data-choice="X" data-odds="${match.odds["X"]}" data-boost-odds="${match.boostOdds["X"]}">
-                  <div><p>X</p> <p>${match.odds["X"]}</p></div>
-                </div>
-                <div class="bet-option" data-id="${match.id}" data-teams="${match.teams}" data-choice="2" data-odds="${match.odds["2"]}" data-boost-odds="${match.boostOdds["2"]}">
-                  <div><p>2</p> <p>${match.odds["2"]}</p></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `);
-          container.append(card);
-        });
-
-        container.on("click", ".bet-option", function () {
-          const teams = $(this).data("teams");
-          const betType = $(this).data("choice");
-          const odds = $(this).data("odds") || "N/A";
-          const boostOdds = $(this).data("boost-odds") || "N/A";
-          const ids = $(this).data("id");
-
-          console.log(
-            `Selected Teams: ${teams}, Bet Type: ${betType}, Odds: ${odds}, Boosted Odds: ${boostOdds}`
-          );
-          selectBet(teams, betType, odds, boostOdds, ids);
-        });
-      };
-
-      const selectBet = (teams, betType, odds, boostOdds, ids) => {
-        if (isModalOpen) return;
-        const popup = $("#popup");
-        const selectedInfo = $("#selected-info");
-        const ticketContent = `
-        <h3>Bilet Pariu ${ids}</h3>
-        <p><strong>Meci:</strong> ${teams}</p>
-        <p><strong>Tip pariu:</strong> ${betType}</p>
-        <p><strong>Cotă standard:</strong> ${odds}</p>
-        <p><strong>Cotă boostată:</strong> ${boostOdds}</p>
-      `;
-        selectedInfo.html(ticketContent);
-        popup.show();
-        isModalOpen = true;
-        $("#generate-img-btn").show();
-        $("#share-btn").hide();
-      };
-
-      const generateTicketImage = (
-        teams,
-        betType,
-        odds,
-        boostOdds,
-        matchId
-      ) => {
-        const canvas = document.getElementById("ticket-canvas");
-        const ctx = canvas.getContext("2d");
-
-        canvas.width = 400;
-        canvas.height = 300;
-
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "#000";
-        ctx.font = "20px Arial";
-        ctx.fillText("Bilet Pariu " + matchId, 20, 40);
-        ctx.font = "16px Arial";
-        ctx.fillText(`Meci: ${teams}`, 20, 80);
-        ctx.fillText(`Tip pariu: ${betType}`, 20, 110);
-        ctx.fillText(`Cota standard: ${odds}`, 20, 140);
-        ctx.fillText(`Cota boostata: ${boostOdds}`, 20, 170);
-
-        const currentDate = new Date().toLocaleDateString("ro-RO");
-        ctx.fillText(`Data generarii: ${currentDate}`, 20, 200);
-
-        // Convert canvas to Blob
-        canvas.toBlob(async (blob) => {
-          if (blob) {
-            // Create an auto-generated ID for the parent folder in the database
-            const ticketRef = dbRef(realtimeDb, `tickets`);
-            const newTicketRef = push(ticketRef); // This will generate an auto ID
-            const autoId = newTicketRef.key; // Get the auto-generated ID (parent folder name)
-
-            // Use the match ID image file name inside
-            const storageRef = ref(
-              storage,
-              `bet-tickets/${autoId}/${matchId}.png`
+      const generateQRCode = (elementId, sessionId, teams, id) => {
+        try {
+          if (!sessionId || sessionId === "TBD" || !id) {
+            throw new Error(
+              "Invalid sessionId or event ID, skipping QR generation"
             );
-            // Upload the Blob to Firebase Storage
-            uploadBytes(storageRef, blob)
-              .then(async (snapshot) => {
-                console.log("Uploaded a blob or file!");
-                // Get the download URL after the file is uploaded
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                console.log("File available at", downloadURL);
+          }
 
-                set(newTicketRef, {
-                  id: matchId,
+          const formattedTeams = teams.replace(/\s+/g, "-").toLowerCase();
+          const qrLink = `https://sport.netbet.ro/fotbal/${String(
+            sessionId
+          )}/${formattedTeams}-${id}/`;
+          $("#" + elementId).empty();
+          new QRCode(document.getElementById(elementId), {
+            text: qrLink,
+            width: 140,
+            height: 140,
+            correctLevel: QRCode.CorrectLevel.H,
+          });
+        } catch (error) {
+          console.error("Error generating QR code:", error);
+        }
+      };
+
+
+      const generateTicketImage = (teams, betType, odds, boostOdds, id) => {
+        try {
+          const canvas = document.getElementById("ticket-canvas");
+          const ctx = canvas.getContext("2d");
+
+          canvas.width = 400;
+          canvas.height = 300;
+
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.fillStyle = "#000";
+          ctx.font = "20px Arial";
+          ctx.fillText("Bilet Pariu " + id, 20, 40);
+          ctx.font = "16px Arial";
+          ctx.fillText(`Meci: ${teams}`, 20, 80);
+          ctx.fillText(`Tip pariu: ${betType}`, 20, 110);
+          ctx.fillText(`Cota standard: ${odds}`, 20, 140);
+          ctx.fillText(`Cota boostata: ${boostOdds}`, 20, 170);
+
+          const currentDate = new Date().toLocaleDateString("ro-RO");
+          ctx.fillText(`Data generarii: ${currentDate}`, 20, 200);
+
+          const qrCanvas = $("#qrcode canvas")[0];
+          if (qrCanvas) {
+            ctx.drawImage(qrCanvas, 250, 50, 100, 100);
+          }
+
+          canvas.toBlob(async (blob) => {
+            if (blob) {
+              try {
+                const ticketRef = dbRef(realtimeDb, `tickets`);
+                const newTicketRef = push(ticketRef);
+                const autoId = newTicketRef.key;
+
+                const storageRef = ref(
+                  storage,
+                  `bet-tickets/${autoId}/${id}.png`
+                );
+                const snapshot = await uploadBytes(storageRef, blob);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log(downloadURL, "dw");
+                console.log(snapshot, "snapshot");
+                console.log(storageRef, "storageRef");
+                console.log(autoId, "autoId");
+                console.log(ticketRef, "ticketRef");
+
+                await set(newTicketRef, {
+                  id: id,
                   teams: teams,
                   betType: betType,
                   odds: odds,
@@ -375,38 +352,137 @@
                   imageUrl: downloadURL,
                   createdAt: new Date().toISOString("ro-RO"),
                   timestamp: serverTimestamp(),
-                })
-                  .then(() => {
-                    console.log("Ticket metadata saved to Realtime Database.");
-                    $("#generate-img-btn").hide();
-                    $("#share-btn").show();
-                    $("#share-btn").on("click", () => {
-                      const fbShareURL = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                        downloadURL
-                      )}`;
-                      window.open(fbShareURL, "_blank");
-                    });
-                  })
-                  .catch((error) =>
-                    console.error(
-                      "Error saving metadata to Realtime Database:",
-                      error
-                    )
-                  );
-              })
-              .catch((error) =>
-                console.error("Error uploading to Firebase Storage:", error)
-              );
-          } else {
-            console.error("Canvas Blob creation failed.");
+                });
+                console.log("Ticket uploaded successfully");
+                $("#generate-img-btn").hide();
+                $("#share-btn").show();
+                $("#share-btn").on("click", async () => {
+  const longUrl = downloadURL; // This is the long Firebase Storage URL
+console.log(longUrl,"fasf")
+  // Generate a short URL before sharing
+  const shortUrl = await generateShortUrl(longUrl);
+  console.log(shortUrl,"longUrl")
+  // Construct Facebook share link with the shortened URL
+  const fbShareURL = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shortUrl)}`;
+  window.open(fbShareURL, "_blank");
+});
+              } catch (error) {
+                console.error("Error uploading ticket:", error);
+                alert("Failed to upload the ticket. Please try again.");
+              }
+            } else {
+              console.error("Canvas Blob creation failed.");
+              alert("Failed to generate the ticket image.");
+            }
+          }, "image/png");
+        } catch (error) {
+          console.error("Error generating ticket:", error);
+          alert("An error occurred while generating the ticket.");
+        }
+      };
+      const generateShortUrl = async (longUrl) => {
+  try {
+    // Generate a new key for the shortened URL
+    const newUrlRef = push(ref(realtimeDb, 'shortenedUrls')); // Use the initialized `realtimeDb`
+
+    const shortKey = newUrlRef.key; // Get the generated unique short key
+
+    // Save the long URL with the generated short key
+    await set(newUrlRef, { longUrl });
+
+    // Construct the shortened URL using your domain or a Firebase hosting domain
+    const shortUrl = `https://yourdomain.com/${shortKey}`; // Replace with your actual domain
+
+    return shortUrl;
+  } catch (error) {
+    console.error('Error generating short URL:', error);
+    return longUrl; // Return the long URL if an error occurs
+  }
+};
+      const renderMatches = async () => {
+        const matches = await fetchMatches();
+        matches.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const container = $("#matches-container");
+        container.empty();
+        matches.forEach((match) => {
+          // Store the match data in an object using match.id
+          matchesData[match.id] = match;
+
+          const card = $(`
+<div class="main-card">
+  <div class="card-content">
+    <div class="info">
+      <p class="t-teams">${match.teams}</p>
+      <p>${match.date}</p>
+      <p>${match.startAt}</p>
+      <p>id: ${match.id}</p>
+    </div>
+    <div class="bet_c">
+      <div class="bet-option" data-id="${match.id}" data-choice="1">
+        <div><p>1</p> <p>${match.odds["1"]}</p></div>
+      </div>
+      <div class="bet-option" data-id="${match.id}" data-choice="X">
+        <div><p>X</p> <p>${match.odds["X"]}</p></div>
+      </div>
+      <div class="bet-option" data-id="${match.id}" data-choice="2">
+        <div><p>2</p> <p>${match.odds["2"]}</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+`);
+          container.append(card);
+        });
+
+        // Use JavaScript object to get data on click
+        container.on("click", ".bet-option", function () {
+          const matchId = $(this).data("id");
+          const choice = $(this).data("choice");
+          console.log(matchId, "matchId");
+          console.log(choice, "choice");
+          // Get the selected match from the matchesData object
+          const selectedMatch = matchesData[matchId];
+          console.log(selectedMatch, "selectedMatch");
+          if (selectedMatch) {
+            const teams = selectedMatch.teams;
+            const odds = selectedMatch.odds[choice];
+            const boostOdds = selectedMatch.boostOdds[choice];
+
+            selectBet(
+              teams,
+              choice,
+              odds,
+              boostOdds,
+              matchId,
+              selectedMatch.sessionId
+            );
           }
-        }, "image/png");
+        });
+      };
+
+      const selectBet = (teams, betType, odds, boostOdds, ids, sessionId) => {
+        if (isModalOpen) return;
+        const popup = $("#popup");
+        const selectedInfo = $("#selected-info");
+        const ticketContent = `
+  <h3>Bilet Pariu ${ids}</h3>
+  <p><strong>Meci:</strong> ${teams}</p>
+  <p><strong>Tip pariu:</strong> ${betType}</p>
+  <p><strong>Cotă standard:</strong> ${odds}</p>
+  <p><strong>Cotă boostată:</strong> ${boostOdds}</p>
+  <p><strong>Cotă sessionId:</strong> ${sessionId}</p>
+`;
+        selectedInfo.html(ticketContent);
+        popup.show();
+        isModalOpen = true;
+        generateQRCode("qrcode", sessionId, teams, ids);
+        $("#generate-img-btn").show();
+        $("#share-btn").hide();
       };
 
       $("#generate-img-btn").on("click", function () {
         const generateButton = $(this);
-
-        // Disable the button to prevent multiple clicks within 3 seconds
         generateButton.prop("disabled", true);
 
         const teams = $("#selected-info").find("p").eq(0).text().split(": ")[1];
@@ -425,10 +501,9 @@
 
         generateTicketImage(teams, betType, odds, boostOdds, ids);
 
-        // Set a timeout to re-enable the button after 3 seconds
         setTimeout(() => {
-          generateButton.prop("disabled", false); // Re-enable the button
-        }, 3000); // 3000 milliseconds = 3 seconds
+          generateButton.prop("disabled", false);
+        }, 3000);
       });
 
       $(document).ready(renderMatches);

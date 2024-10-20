@@ -1,0 +1,156 @@
+
+*,
+*::after,
+*::before {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  padding: 20px;
+}
+
+p {
+  margin: 5px 0;
+}
+.info p {
+  text-align: center;
+}
+.info .t-teams {
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+.info:not(.t-teams) {
+  font-size: 1.1rem;
+}
+.main-card {
+  width: 100%;
+  margin: 0 auto;
+  background-color: #cacaca;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+.main-card .card-content {
+  max-width: 600px;
+  min-width: 320px;
+}
+.secondary-cards-container {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-direction: row;
+}
+.secondary-card {
+  display: flex;
+  justify-content: space-between;
+  min-width: 250px;
+  width: 30%;
+  padding: 10px;
+  width: fit-content;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
+  cursor: pointer;
+}
+.card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+  min-width: 200px;
+  background-color: beige;
+  margin: 0 auto;
+}
+
+.bet-options span {
+  margin: 0 10px;
+  cursor: pointer;
+}
+
+.bet_c {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: center;
+  background: rgb(192, 247, 178);
+  gap: 20px;
+  align-items: center;
+}
+.bet-option {
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+}
+.bet-option:hover {
+  background: blueviolet;
+  color: white;
+}
+
+.bet-option div {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Pop-up styling */
+#popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  padding: 20px;
+  background-color: white;
+  border: 2px solid #000;
+  border-radius: 10px;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Overlay to darken background when pop-up is active */
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
+/* Close button for pop-up */
+#popup .close-btn {
+  cursor: pointer;
+  color: red;
+  float: right;
+  font-size: 1.2em;
+}
+
+/* Pop-up content styling */
+#selected-info h3 {
+  margin-bottom: 15px;
+}
+
+#selected-info p {
+  margin: 5px 0;
+}
+
+@media (max-width: 991px) {
+  .secondary-cards-container {
+    flex-direction: row;
+  }
+}
+button {
+  padding: 0.5em;
+  width: fit-content;
+  background: crimson;
+  color: white;
+  border: 0;
+  outline: 0;
+  margin: 10px auto;
+  cursor: pointer;
+}

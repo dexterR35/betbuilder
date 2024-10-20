@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Betting App</title>
+    <style>
+      *,
+      *::after,
+      *::before {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        padding: 20px;
+      }
+
+      p {
+        margin: 5px 0;
+      }
+      .info p {
+        text-align: center;
+      }
+      .info .t-teams {
+        font-size: 1.3rem;
+        font-weight: bold;
+      }
+      .info:not(.t-teams) {
+        font-size: 1.1rem;
+      }
+      .main-card {
+        width: 100%;
+        margin: 0 auto;
+        background-color: #cacaca;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .secondary-cards-container {
+        display: flex;
+        justify-content: center;
+        align-content: center;
+        flex-direction: row;
+      }
+      .secondary-card {
+        display: flex;
+        justify-content: space-between;
+        min-width: 250px;
+        width: 30%;
+        padding: 10px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 10px 0;
+        cursor: pointer;
+      }
+      .bet_c {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        justify-content: center;
+        background: rgb(192, 247, 178);
+        gap: 20px;
+        align-items: center;
+      }
+      .bet-option {
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+      }
+      .bet-option:hover {
+        background: blueviolet;
+        color: white;
+      }
+
+      @media (max-width: 991px) {
+        .secondary-cards-container {
+          flex-direction: row;
+        }
+      }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <!-- Container for cards -->
+    <div id="primary-card"></div>
+    <div id="secondary-card"></div>
+
+    <script type="text/javascript">
+        // Helper function to format date into dd.mm.yy format
+
+        const formatDate = (dateString) => {
+          const date = new Date(dateString);
+          const day = String(date.getDate()).padStart(2, "0");
+          const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+          const year = String(date.getFullYear()).slice(-2); // Get last 2 digits of the year
+          return `${day}.${month}.${year}`;
+        };
+        
+        // Remove Firebase-related code;
+        // Error handling for fetching matches from Google Sheets
+        const fetchMatches = async () => {
+          try {
+            const sheetUrl =
+              "https://docs.google.com/spreadsheets/d/13OkmkMb4Bak7uLQ7TKvkAhvJ1DeBEO7GHi3Njl9tnDA/gviz/tq?tqx=out:csv&sheet=Sheet1";
+            const response = await fetch(sheetUrl);
+            if (!response.ok) {
+              throw new Error("Failed to fetch match data");
+            }
+            const textData = await response.text();
+            const rows = textData.split("\n").slice(1);
+      
+            const matches = rows.map((row) => {
+              const cols = row.split(",").map((col) => col.replace(/(^"|"$)/g, ""));
+              return {
+                date: cols[0], // Date
+                startAt: cols[1], // Start time
+                teams: `${cols[2]} vs ${cols[3]}`, // Teams
+                odds: {
+                  1: cols[4] !== "TBD" ? cols[4] : "TBD", // Odds for 1
+                  X: cols[5] !== "TBD" ? cols[5] : "TBD", // Odds for X
+                  2: cols[6] !== "TBD" ? cols[6] : "TBD", // Odds for 2
+                },
+                id: cols[10] ? cols[10] : "TBD", // Match ID
+              };
+            });
+            return matches;
+          } catch (error) {
+            console.error("Error fetching matches:", error);
+            alert("Failed to fetch match data. Please try again later.");
+            return [];
+          }
+        };
+      
+        const renderMatches = async () => {
+          const matches = await fetchMatches();
+          const currentDate = new Date();
+          
+          // Filter matches from current date onward
+          const upcomingMatches = matches
+            .filter((match) => new Date(match.date) <= currentDate)
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+          if (upcomingMatches.length === 0) {
+            alert("No upcoming matches");
+            return;
+          }
+      
+          const nextMatch = upcomingMatches[0];
+          const nextNextMatch = upcomingMatches[1] || null;
+      
+          // Render primary match card
+          const primaryCard = `
+            <div class="main-card">
+              <div class="info">
+                <p class="t-teams">${nextMatch.teams}</p>
+                <p>${formatDate(nextMatch.date)}</p>
+                <p>${nextMatch.startAt}</p>
+              </div>
+              <div class="bet_c">
+                <div class="bet-option" data-id="${nextMatch.id}" data-choice="1">
+                  <p>1</p><p>${nextMatch.odds["1"]}</p>
+                </div>
+                <div class="bet-option" data-id="${nextMatch.id}" data-choice="X">
+                  <p>X</p><p>${nextMatch.odds["X"]}</p>
+                </div>
+                <div class="bet-option" data-id="${nextMatch.id}" data-choice="2">
+                  <p>2</p><p>${nextMatch.odds["2"]}</p>
+                </div>
+              </div>
+            </div>
+          `;
+          $("#primary-card").html(primaryCard);
+      
+          // Render secondary match card (if available)
+          if (nextNextMatch) {
+            const secondaryCard = `
+              <div class="secondary-card">
+                <div class="info">
+                  <p class="t-teams">${nextNextMatch.teams}</p>
+                  <p>${formatDate(nextNextMatch.date)}</p>
+                  <p>${nextNextMatch.startAt}</p>
+                </div>
+              </div>
+            `;
+            $("#secondary-card").html(secondaryCard);
+          }
+        };
+      
+        $(document).ready(renderMatches);
+      </script>
+      
+  </body>
+</html>

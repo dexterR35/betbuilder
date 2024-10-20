@@ -5,176 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Betting App</title>
-    <style>
-      *,
-      *::after,
-      *::before {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        padding: 20px;
-      }
 
-      p {
-        margin: 5px 0;
-      }
-      .info p {
-        text-align: center;
-      }
-      .info .t-teams {
-        font-size: 1.3rem;
-        font-weight: bold;
-      }
-      .info:not(.t-teams) {
-        font-size: 1.1rem;
-      }
-      .main-card {
-        width: 100%;
-        margin: 0 auto;
-        background-color: #cacaca;
-        padding: 20px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-      }
-      .main-card .card-content {
-        max-width: 600px;
-        min-width: 320px;
-      }
-      .secondary-cards-container {
-        display: flex;
-        justify-content: center;
-        align-content: center;
-        flex-direction: row;
-      }
-      .secondary-card {
-        display: flex;
-        justify-content: space-between;
-        min-width: 250px;
-        width: 30%;
-        padding: 10px;
-        width: fit-content;
-        background-color: #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        margin: 10px 0;
-        cursor: pointer;
-      }
-      .card-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-direction: column;
-        min-width: 200px;
-        background-color: beige;
-        margin: 0 auto;
-      }
-
-      .bet-options span {
-        margin: 0 10px;
-        cursor: pointer;
-      }
-
-      .bet_c {
-        display: flex;
-        flex-direction: row;
-        width: 100%;
-        justify-content: center;
-        background: rgb(192, 247, 178);
-        gap: 20px;
-        align-items: center;
-      }
-      .bet-option {
-        padding: 10px;
-        text-align: center;
-        cursor: pointer;
-      }
-      .bet-option:hover {
-        background: blueviolet;
-        color: white;
-      }
-
-      .bet-option div {
-        display: flex;
-        flex-direction: column;
-      }
-
-      /* Pop-up styling */
-      #popup {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 300px;
-        padding: 20px;
-        background-color: white;
-        border: 2px solid #000;
-        border-radius: 10px;
-        z-index: 1000;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      /* Overlay to darken background when pop-up is active */
-      #overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 999;
-        display: none;
-      }
-
-      /* Close button for pop-up */
-      #popup .close-btn {
-        cursor: pointer;
-        color: red;
-        float: right;
-        font-size: 1.2em;
-      }
-
-      /* Pop-up content styling */
-      #selected-info h3 {
-        margin-bottom: 15px;
-      }
-
-      #selected-info p {
-        margin: 5px 0;
-      }
-
-      @media (max-width: 991px) {
-        .secondary-cards-container {
-          flex-direction: row;
-        }
-      }
-      button {
-        padding: 0.5em;
-        width: fit-content;
-        background: crimson;
-        color: white;
-        border: 0;
-        outline: 0;
-        margin: 10px auto;
-        cursor: pointer;
-      }
-    </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.7/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link rel="stylesheet" href="./index.css">
+
   </head>
   <body>
     <!-- Container pentru carduri -->
+    <div id="ticket-container"></div>
+    
     <div id="matches-container"></div>
     <div id="popup">
       <span class="close-btn" onclick="closePopup()">X</span>
       <div id="selected-info"></div>
       <div id="qrcode"></div>
+      
       <!-- QR code will be displayed here -->
+<!-- HTML for the input and error message -->
+<input type="number" id="bet-amount" min="50" max="5000" step="1" placeholder="Enter bet amount" value=50>
+<div id="bet-error" style="color: red; display: none;"></div>
+
+  
+  <!-- Display potential winnings -->
+  <p id="potential-winning"></p>
       <button id="share-btn">Share to social /inprogress</button>
       <br />
       <button id="generate-img-btn">Generate Image</button>
@@ -182,7 +37,9 @@
     <canvas id="ticket-canvas" style="display: none"></canvas>
     <a id="download-link" style="display: none">Download Ticket</a>
 
-    <script type="module">
+    
+      // Error handling for fetching matches from Google Sheets
+      <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
       import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
       import {
@@ -216,7 +73,6 @@
       const db = getFirestore(app);
       const storage = getStorage(app);
       const realtimeDb = getDatabase(app);
-      
 
       let isModalOpen = false;
 
@@ -228,6 +84,9 @@
         popup.hide();
         isModalOpen = false;
       };
+
+      // Attach this to a button or event that closes the modal
+      $("#close-modal-btn").on("click", closePopup);
 
       // Error handling for fetching matches from Google Sheets
       const fetchMatches = async () => {
@@ -270,145 +129,45 @@
           return [];
         }
       };
-
       const generateQRCode = (elementId, sessionId, teams, id) => {
-        try {
-          if (!sessionId || sessionId === "TBD" || !id) {
-            throw new Error(
-              "Invalid sessionId or event ID, skipping QR generation"
-            );
-          }
-
-          const formattedTeams = teams.replace(/\s+/g, "-").toLowerCase();
-          const qrLink = `https://sport.netbet.ro/fotbal/${String(
-            sessionId
-          )}/${formattedTeams}-${id}/`;
-          $("#" + elementId).empty();
-          new QRCode(document.getElementById(elementId), {
-            text: qrLink,
-            width: 140,
-            height: 140,
-            correctLevel: QRCode.CorrectLevel.H,
-          });
-        } catch (error) {
-          console.error("Error generating QR code:", error);
+    try {
+        if (!sessionId || sessionId === "TBD" || !id) {
+            throw new Error("Invalid sessionId or event ID, skipping QR generation");
         }
-      };
 
+        // Format the teams and create the link to embed inside the QR code
+        const formattedTeams = teams.replace(/\s+/g, "-").toLowerCase();
+        const qrLink = `https://sport.netbet.ro/fotbal/${String(sessionId)}/${formattedTeams}-${id}/`;
 
-      const generateTicketImage = (teams, betType, odds, boostOdds, id) => {
-        try {
-          const canvas = document.getElementById("ticket-canvas");
-          const ctx = canvas.getContext("2d");
+        // Clear any previous QR code content in the element
+        $("#" + elementId).empty();
 
-          canvas.width = 400;
-          canvas.height = 300;
+        // Generate the QR code using the link as the content
+        new QRCode(document.getElementById(elementId), {
+            text: qrLink, // This is the link that will be embedded in the QR code
+            width: 100,
+            height: 100,
+            correctLevel: QRCode.CorrectLevel.H, // High error correction level
+        });
+          // Optionally: Add a clickable link below the QR code
+        const qrCodeLink = $("<a>")
+            .attr("href", qrLink)
+            .attr("target", "_blank") // Open in a new tab
+            .text("Click here to open link");
+        
+        $("#" + elementId).append(qrCodeLink);
 
-          ctx.fillStyle = "#fff";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          ctx.fillStyle = "#000";
-          ctx.font = "20px Arial";
-          ctx.fillText("Bilet Pariu " + id, 20, 40);
-          ctx.font = "16px Arial";
-          ctx.fillText(`Meci: ${teams}`, 20, 80);
-          ctx.fillText(`Tip pariu: ${betType}`, 20, 110);
-          ctx.fillText(`Cota standard: ${odds}`, 20, 140);
-          ctx.fillText(`Cota boostata: ${boostOdds}`, 20, 170);
-
-          const currentDate = new Date().toLocaleDateString("ro-RO");
-          ctx.fillText(`Data generarii: ${currentDate}`, 20, 200);
-
-          const qrCanvas = $("#qrcode canvas")[0];
-          if (qrCanvas) {
-            ctx.drawImage(qrCanvas, 250, 50, 100, 100);
-          }
-
-          canvas.toBlob(async (blob) => {
-            if (blob) {
-              try {
-                const ticketRef = dbRef(realtimeDb, `tickets`);
-                const newTicketRef = push(ticketRef);
-                const autoId = newTicketRef.key;
-
-                const storageRef = ref(
-                  storage,
-                  `bet-tickets/${autoId}/${id}.png`
-                );
-                const snapshot = await uploadBytes(storageRef, blob);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                console.log(downloadURL, "dw");
-                console.log(snapshot, "snapshot");
-                console.log(storageRef, "storageRef");
-                console.log(autoId, "autoId");
-                console.log(ticketRef, "ticketRef");
-
-                await set(newTicketRef, {
-                  id: id,
-                  teams: teams,
-                  betType: betType,
-                  odds: odds,
-                  boostOdds: boostOdds,
-                  imageUrl: downloadURL,
-                  createdAt: new Date().toISOString("ro-RO"),
-                  timestamp: serverTimestamp(),
-                });
-                console.log("Ticket uploaded successfully");
-                $("#generate-img-btn").hide();
-                $("#share-btn").show();
-                $("#share-btn").on("click", async () => {
-  const longUrl = downloadURL; // This is the long Firebase Storage URL
-console.log(longUrl,"fasf")
-  // Generate a short URL before sharing
-  const shortUrl = await generateShortUrl(longUrl);
-  console.log(shortUrl,"longUrl")
-  // Construct Facebook share link with the shortened URL
-  const fbShareURL = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shortUrl)}`;
-  window.open(fbShareURL, "_blank");
-});
-              } catch (error) {
-                console.error("Error uploading ticket:", error);
-                alert("Failed to upload the ticket. Please try again.");
-              }
-            } else {
-              console.error("Canvas Blob creation failed.");
-              alert("Failed to generate the ticket image.");
-            }
-          }, "image/png");
-        } catch (error) {
-          console.error("Error generating ticket:", error);
-          alert("An error occurred while generating the ticket.");
-        }
-      };
-      const generateShortUrl = async (longUrl) => {
-  try {
-    // Generate a new key for the shortened URL
-    const newUrlRef = push(ref(realtimeDb, 'shortenedUrls')); // Use the initialized `realtimeDb`
-
-    const shortKey = newUrlRef.key; // Get the generated unique short key
-
-    // Save the long URL with the generated short key
-    await set(newUrlRef, { longUrl });
-
-    // Construct the shortened URL using your domain or a Firebase hosting domain
-    const shortUrl = `https://yourdomain.com/${shortKey}`; // Replace with your actual domain
-
-    return shortUrl;
-  } catch (error) {
-    console.error('Error generating short URL:', error);
-    return longUrl; // Return the long URL if an error occurs
-  }
-};
-      const renderMatches = async () => {
+    } catch (error) {
+        console.error("Error generating QR code:", error);
+    }
+};  
+ const renderMatches = async () => {
         const matches = await fetchMatches();
-        matches.sort((a, b) => new Date(a.date) - new Date(b.date));
-
+        matches.sort((a, b) => new Date(b.date) - new Date(a.date));
         const container = $("#matches-container");
         container.empty();
         matches.forEach((match) => {
-          // Store the match data in an object using match.id
           matchesData[match.id] = match;
-
           const card = $(`
 <div class="main-card">
   <div class="card-content">
@@ -434,77 +193,165 @@ console.log(longUrl,"fasf")
 `);
           container.append(card);
         });
-
-        // Use JavaScript object to get data on click
         container.on("click", ".bet-option", function () {
+          if (isModalOpen) return;
           const matchId = $(this).data("id");
           const choice = $(this).data("choice");
-          console.log(matchId, "matchId");
-          console.log(choice, "choice");
-          // Get the selected match from the matchesData object
           const selectedMatch = matchesData[matchId];
-          console.log(selectedMatch, "selectedMatch");
           if (selectedMatch) {
             const teams = selectedMatch.teams;
             const odds = selectedMatch.odds[choice];
             const boostOdds = selectedMatch.boostOdds[choice];
-
-            selectBet(
-              teams,
-              choice,
-              odds,
-              boostOdds,
-              matchId,
-              selectedMatch.sessionId
-            );
+            selectBet(teams, choice, odds, boostOdds, matchId, selectedMatch.sessionId);
           }
         });
       };
 
-      const selectBet = (teams, betType, odds, boostOdds, ids, sessionId) => {
-        if (isModalOpen) return;
-        const popup = $("#popup");
-        const selectedInfo = $("#selected-info");
-        const ticketContent = `
-  <h3>Bilet Pariu ${ids}</h3>
-  <p><strong>Meci:</strong> ${teams}</p>
-  <p><strong>Tip pariu:</strong> ${betType}</p>
-  <p><strong>Cotă standard:</strong> ${odds}</p>
-  <p><strong>Cotă boostată:</strong> ${boostOdds}</p>
-  <p><strong>Cotă sessionId:</strong> ${sessionId}</p>
-`;
-        selectedInfo.html(ticketContent);
-        popup.show();
-        isModalOpen = true;
-        generateQRCode("qrcode", sessionId, teams, ids);
-        $("#generate-img-btn").show();
-        $("#share-btn").hide();
-      };
+// Define constants for minimum and maximum bet amounts
+const MIN_BET_AMOUNT = 50;
+const MAX_BET_AMOUNT = 5000;
 
-      $("#generate-img-btn").on("click", function () {
-        const generateButton = $(this);
-        generateButton.prop("disabled", true);
+const selectBet = (teams, betType, odds, boostOdds, ids, sessionId) => {
+  if (isModalOpen) return;
+  const popup = $("#popup");
+  const selectedInfo = $("#selected-info");
+  // Set the default bet amount to MIN_BET_AMOUNT if not already set
+  const betAmount = parseFloat($("#bet-amount").val()) || MIN_BET_AMOUNT;
+  // Convert odds to a number and calculate potential winnings
+  const numericOdds = parseFloat(odds); // Ensure odds are a valid number
+  const potentialWinning = (numericOdds * betAmount).toFixed(0);
 
-        const teams = $("#selected-info").find("p").eq(0).text().split(": ")[1];
-        const betType = $("#selected-info")
-          .find("p")
-          .eq(1)
-          .text()
-          .split(": ")[1];
-        const odds = $("#selected-info").find("p").eq(2).text().split(": ")[1];
-        const boostOdds = $("#selected-info")
-          .find("p")
-          .eq(3)
-          .text()
-          .split(": ")[1];
-        const ids = $("#selected-info").find("h3").text().split(" ")[2];
+  // Format the potential winning with thousand separators
+  const formattedWinning = parseFloat(potentialWinning).toLocaleString('ro-RO');
 
-        generateTicketImage(teams, betType, odds, boostOdds, ids);
+  // Set up the initial static structure for the ticket content
+  const ticketContent = `
+    <h3>Bilet Pariu ${ids}</h3>
+    <p><strong>Meci:</strong> ${teams}</p>
+    <p><strong>Tip pariu:</strong> ${betType}</p>
+    <p><strong>Cotă standard:</strong> ${odds}</p>
+    <p><strong>Cotă boostată:</strong> ${boostOdds}</p>
+    <p><strong>Session ID:</strong> ${sessionId}</p>
+    <p><strong>Potential Winning:</strong> <span id="dynamic-potential-winning">${formattedWinning}</span> RON</p>
+  `;
 
-        setTimeout(() => {
-          generateButton.prop("disabled", false);
-        }, 3000);
-      });
+  selectedInfo.html(ticketContent); // Set the initial content
+  // Store the odds as a number to avoid NaN issues
+  selectedInfo.data("odds", numericOdds);
+  popup.show();
+  isModalOpen = true;
+  // Generate QR code
+  generateQRCode("qrcode", sessionId, teams, ids);
+  // Show the button for generating the image
+  $("#generate-img-btn").show();
+  $("#share-btn").hide();
+};
+
+$("#bet-amount").on("input", function () {
+  const betAmountInput = $(this).val();
+  const betAmount = parseFloat(betAmountInput);
+  const odds = parseFloat($("#selected-info").data("odds")); 
+  const errorDiv = $("#bet-error");
+  let validBetAmount = betAmount; 
+
+  // Check if the input is a valid number
+  if (isNaN(betAmount) || betAmountInput.trim() === "") {
+    // If input is invalid, calculate with minimum bet (MIN_BET_AMOUNT)
+    errorDiv.text(`Minimum ${MIN_BET_AMOUNT} RON.`).show();
+    validBetAmount = MIN_BET_AMOUNT; // Use MIN_BET_AMOUNT for the calculation when input is invalid
+  } else if (betAmount < MIN_BET_AMOUNT) {
+    // If the input is less than MIN_BET_AMOUNT, calculate with MIN_BET_AMOUNT
+    errorDiv.text(`Minimum bet amount is ${MIN_BET_AMOUNT} RON.`).show();
+    validBetAmount = MIN_BET_AMOUNT;
+  } else if (betAmount > MAX_BET_AMOUNT) {
+    // If input exceeds MAX_BET_AMOUNT, show error and correct to MAX_BET_AMOUNT
+    errorDiv.text(`Maximum bet amount is ${MAX_BET_AMOUNT} RON.`).show();
+    validBetAmount = MAX_BET_AMOUNT; 
+    $(this).val(MAX_BET_AMOUNT); 
+  } else {
+    errorDiv.hide();
+    validBetAmount = betAmount; 
+  }
+  
+  // Perform the potential winnings calculation using the valid bet amount
+  if (!isNaN(odds) && odds > 0) {
+    const potentialWinning = (odds * validBetAmount).toFixed(0); // Calculate potential winnings
+    const formattedWinning = parseInt(potentialWinning, 10).toLocaleString('de-DE'); // Format with separators
+    $("#dynamic-potential-winning").text(formattedWinning); // Update only the potential winnings part
+  } else {
+    $("#dynamic-potential-winning").text("0"); // Handle invalid odds (unlikely case)
+  }
+});
+
+
+
+// Capture screenshot of popup and upload to Firebase
+$("#generate-img-btn").on("click", function () {
+    const generateButton = $(this);
+    
+    // Hide the "Generate Image" button and any other elements during image generation
+    generateButton.hide();
+    $("#bet-amount").hide(); // Hide bet amount input
+    $(".close-btn").hide(); // Hide the close button (if any)
+    
+    // Disable sharing until the image is generated
+    $("#share-btn").hide();
+
+    // Use a delay of 1 second before generating the image
+    setTimeout(() => {
+        // Use html2canvas to capture the popup and generate a canvas
+        html2canvas(document.getElementById("popup")).then(async (canvas) => {
+            // Convert the canvas directly to a Blob
+            canvas.toBlob(async (blob) => {
+                if (blob) {
+                    try {
+                        const ids = $("#selected-info").find("h3").text().split(" ")[2]; // ID from the pop-up
+                        const ticketRef = dbRef(realtimeDb, "bet-tickets");
+                        const newTicketRef = push(ticketRef);
+                        const autoId = newTicketRef.key;
+
+                        // Create a Firebase storage reference for the PNG file
+                        const storageRef = ref(storage, `bet-tickets/${autoId}/${ids}.png`);
+
+                        // Upload the Blob (PNG) directly to Firebase storage
+                        const snapshot = await uploadBytes(storageRef, blob);
+
+                        // Get the download URL of the uploaded PNG
+                        const downloadURL = await getDownloadURL(snapshot.ref);
+
+                        console.log(downloadURL, "Image uploaded successfully");
+
+                        // Save the ticket details and image URL to Firebase Realtime Database
+                        await set(newTicketRef, {
+                            id: ids,
+                            imageUrl: downloadURL,
+                            createdAt: new Date().toISOString(),
+                            timestamp: serverTimestamp(),
+                        });
+
+                        // Enable sharing the image
+                        $("#share-btn").show(); // Show share button
+                        $("#share-btn").on("click", () => {
+                            const fbShareURL = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(downloadURL)}`;
+                            window.open(fbShareURL, "_blank");
+                        });
+                    } catch (error) {
+                        console.error("Error uploading image:", error);
+                        alert("Failed to upload the image. Please try again.");
+                    }
+                } else {
+                    console.error("Failed to generate the image blob.");
+                    alert("Failed to generate the image.");
+                }
+
+                // Re-enable the generate button after a short delay
+                generateButton.prop("disabled", false);
+            });
+        });
+    }, 1000); // Set the delay to 1 second (1000 milliseconds)
+});
+
+
 
       $(document).ready(renderMatches);
     </script>

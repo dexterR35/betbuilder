@@ -92,7 +92,7 @@
       // Helper function to parse "dd.MM.yyyy" and "HH:mm" (ro-RO)
       function parseRoDateTime(dateStr) {
         const [day, month, year] = dateStr.split(".").map(Number);
-        return new Date(year, month - 1, day);
+        return new Date(year, month - 1, day); 
       }
 
       // Function to format a Date object into the Romanian 'ro-RO' format
@@ -105,7 +105,7 @@
         };
         return new Intl.DateTimeFormat("ro-RO", options).format(dateObj);
       }
-   
+      // Error handling for fetching matches from Google Sheets
       const fetchMatches = async () => {
         try {
           const sheetUrl =
@@ -161,9 +161,12 @@
           validMatches.sort((a, b) => {
             const dateA = parseRoDateTime(a.date);
             const dateB = parseRoDateTime(b.date);
-            return dateA - dateB;
+            return dateA - dateB; // Compare Date objects
           });
+
           console.log(validMatches, "Sorted valid matches");
+
+          // Return only the last 3 matches after sorting
           return validMatches.slice(-4);
         } catch (error) {
           console.error("Error fetching matches:", error);
@@ -202,30 +205,32 @@
         }
       };
 
+      // console.log(formatRoDateTime(new Date()));
       const renderMatches = async () => {
         const matches = await fetchMatches();
- 
+        const formattedGameDates = formatRoDateTime(
+          parseRoDateTime(matches[0].date)
+        );
         const currentDataGame = formatRoDateTime(new Date());
 
+        console.log(formattedGameDates, "formattedGameDates");
         console.log(currentDataGame, "currentDataGame");
-        // console.log(formattedGameDates === currentDataGame, "===");
-        // if (formattedGameDates === currentDataGame) {
-        //   console.log(
-        //     formattedGameDates,
-        //     currentDataGame,
-        //     "test   console.log(test,)"
-        //   );
-        // }
+        console.log(formattedGameDates === currentDataGame, "===");
+        if (formattedGameDates === currentDataGame) {
+          console.log(
+            formattedGameDates,
+            currentDataGame,
+            "test   console.log(test,)"
+          );
+        }
+
+        // Parse the dates and sort them in ascending order
+
         const container = $("#matches-container");
         container.empty();
+
         matches.forEach((match) => {
           matchesData[match.id] = match;
-          const formattedGameDates = formatRoDateTime(
-          parseRoDateTime(match.date)
-        );
-    
-        console.log(formattedGameDates, "formattedGameDates");
-
           const card = $(`
       <div class="main-card">
         <div class="card-content">

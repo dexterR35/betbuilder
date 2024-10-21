@@ -36,7 +36,7 @@ body {
   border-radius: 15px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
   margin: 20px;
-  padding: 20px;
+  padding: 15px;
   width: 380px;
   display: flex;
   flex-direction: column;
@@ -63,7 +63,7 @@ width: 100%;
 
 .t-teams {
   font-weight: bold;
-  font-size: 1.4em;
+  font-size: 1.2em;
   color: #333;
 }
 
@@ -72,12 +72,18 @@ width: 100%;
   font-size: 0.9em;
   color: #555;
 }
-.info div,header {
+.info div,.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  margin: 5px 0;
 }
-
+.header img {
+  width: 30%;
+  height: auto;
+  object-fit: contain;
+}
 .gray-out::after {
   content: "";
   position: absolute;

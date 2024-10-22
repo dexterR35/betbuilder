@@ -7,85 +7,166 @@
 }
 
 body {
-    height: 100vh;
-    font-size: 110%;
-    font-weight: 600;
-    font-family: sans-serif;
+  height: 100vh;
+  font-size: 110%;
+  font-weight: 600;
+  font-family: sans-serif;
+  background: steelblue;
+}
+/* Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Edge and Internet Explorer */
+input[type="number"] {
+  appearance: textfield;
+}
+.teams,
+.teams p,
+.bet-option,
+.c-ticket,.body-ticket > div,.form-ticket  {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .card-content {
-  background: rgb(125, 125, 245);
+  background: #15154f;
   max-width: 360px;
   min-width: 360px;
   text-align: center;
+  color: white;
 }
 
 .header-ticket,
 .footer-ticket {
-  background: red;
+  /* background: red; */
   padding: 20px 0;
-  font-size: 1.4em;
+  font-size: 1.2em;
   text-transform: uppercase;
+  font-weight: bold;
 }
 
-.d-between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
+.underline {
+  text-decoration: line-through;
+}
+.error-message {
+font-size: 13px;
+}
 .body-ticket {
-  padding: 10px 20px;
+  padding: 10px 15px;
+  color: rgb(12, 12, 12);
+  background: #fcfcfc;
+}
+.body-ticket > div {
+  justify-content: space-between;
+}
+.body-ticket > div:nth-child(1) {
+  justify-content: space-around;
+  margin-bottom:0;
+}
+.body-ticket > div:nth-child(2) {
+  margin: 2px 0 15px;
 }
 
 .body-ticket > div,
 .footer-ticket {
-  margin: 15px 0;
-}
-
-.body-ticket {
-  background: green;
   margin: 10px 0;
 }
 
-.footer-ticket {
-  background: brown;
+form input {
+  border: 1px solid #15154f;
+  outline: none;
+  border-radius: 10px;
+  width: 100%;
+}
+
+.form-ticket {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background:#15154f;
+}
+
+.form-ticket input {
+  text-align: end;
+  background: #fcfcfc;
+  font-size: 20px;
+  padding: 7px 10px;
+}
+.form-ticket > div {
+  padding: 5px;
+  color: white;
 }
 
 .bet-option > div {
-  padding: 10px;
-  background: red;
+  padding: 7px 10px;
 }
 
 .bet-option {
-  background: blue;
-  display: flex;
+  background: #e3e3e3;
+  align-items: unset;
+  border-radius: 10px;
   flex-direction: row;
+  min-width: 100px;
 }
-.underline {
-  text-decoration: line-through;
+.bet-option > div p:nth-last-child(1) {
+  color: crimson;
 }
-
+.selected-bet {
+  background: #ffd700; 
+  border: 2px solid #ffbf00; 
+}
 .insert-ticket {
-    z-index: 5;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
+  z-index: 5;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-170%, -50%);
 }
 .c-ticket {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
+  position: relative;
 }
 
 .test {
-    position: relative;
-
+  position: relative;
 }
 
 .test2 {
-    overflow: hidden;
+  overflow: hidden;
 }
 
+
+.teams {
+  gap: 4px;
+  text-transform: uppercase;
+  flex-direction: column;
+}
+.teams:nth-child(1) {
+  justify-content: start;
+}
+.teams:nth-child(2) {
+  justify-content: end;
+}
+.teams img {
+  width: 40px;
+  min-width: 50px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 50%;
+  background: linear-gradient(351deg, #e2e2e2, transparent);
+  padding: 4px;
+}
+.teams p {
+  min-height: 50px;
+  align-items: center;
+}

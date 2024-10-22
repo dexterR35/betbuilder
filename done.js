@@ -1,7 +1,14 @@
+
+const MIN_BET_AMOUNT = 20;
+const MAX_BET_AMOUNT = 2000;
+const matchesData = {};
+
+
 function parseRoDateTime(dateStr) {
   const [day, month, year] = dateStr.split(".").map(Number);
   return new Date(year, month - 1, day);
 }
+
 
 function formatRoDateTime(dateObj) {
   const options = {
@@ -12,8 +19,6 @@ function formatRoDateTime(dateObj) {
   };
   return new Intl.DateTimeFormat("ro-RO", options).format(dateObj);
 }
-
-const matchesData = {};
 
 const fetchMatches = async () => {
   try {
@@ -42,6 +47,7 @@ const fetchMatches = async () => {
           1: cols[7] !== "TBD" && cols[7] !== "" ? cols[7] : "TBD",
           X: cols[8] !== "TBD" && cols[8] !== "" ? cols[8] : "TBD",
           2: cols[9] !== "TBD" && cols[9] !== "" ? cols[9] : "TBD",
+
         },
         id: cols[10] && cols[10] !== "" ? cols[10] : "TBD",
         sessionId: cols[11] && cols[11] !== "" ? String(cols[11]) : "TBD",
@@ -92,6 +98,7 @@ const renderMatches = async () => {
   console.log(formattedGameDates, "formattedGameDates");
   console.log(currentDataGame, "currentDataGame");
   console.log(formattedGameDates === currentDataGame, "===");
+
   if (formattedGameDates === currentDataGame) {
     console.log(
       formattedGameDates,
@@ -100,39 +107,45 @@ const renderMatches = async () => {
     );
   }
 
-  // Parse the dates and sort them in ascending order
-
   const container = $("#insert-ticket");
-  container.empty();
 
+  container.empty();
   matches.forEach((match) => {
+
     matchesData[match.id] = match;
+ // Normalize team names by replacing spaces with underscores and converting to lowercase
+ const teamANameFormatted = match.teamsA.toLowerCase().replace(/\s+/g, "-");
+ console.log(teamANameFormatted)
+ const teamBNameFormatted = match.teamsB.toLowerCase().replace(/\s+/g, "-");
+
+ // Dynamically construct the image paths using match.id and formatted team names
+ const teamAImage = `./assets/${teamANameFormatted}.png`;
+ const teamBImage = `./assets/${teamBNameFormatted}.png`;
+
     const teamANameSplit = match.teamsA.includes(" ")
     ? match.teamsA.split(" ").join("<br>")
     : match.teamsA;
 
-  const teamBNameSplit = match.teamsB.includes(" ")
+    const teamBNameSplit = match.teamsB.includes(" ")
     ? match.teamsB.split(" ").join("<br>")
     : match.teamsB;
 
-
     const card = $(`
-  
     <div class="main-card">
         <div class="card-content">
           <div class="header-ticket">
            Biletul tau
           </div>
           <div class="body-ticket">
-            <div class="d-between">
-              <p class="t-teams"><img src="#"> ${teamANameSplit}</p>
-              <p>-</p>
-              <p class="t-teams">${teamBNameSplit} <img src="#"> </p>
+            <div>
+              <div class="teams"><img src="${teamAImage}" alt="teamA" class="teamA"><p>${teamANameSplit}</p></div>
+              <p>VS</p>
+              <div class="teams"><img src="${teamBImage}" alt="teamB" class="teamB"><p>${teamBNameSplit}</p></div>
             </div>
-            <div class="d-between">
+            <div>
                 <p>${match.startAt}</p> <p>${match.date}</p>
             </div>
-            <div class="bet-ticket d-between">
+            <div class="bet-ticket">
                 <div class="bet-option" data-id="${match.id}" data-choice="1">
                   <div><p>1</p> <p class="underline">${match.odds["1"]}</p> <p>${match.boostOdds["1"]}</p></div>
                 </div>
@@ -143,36 +156,103 @@ const renderMatches = async () => {
                   <div><p>2</p> <p class="underline">${match.odds["2"]}</p> <p>${match.boostOdds["2"]}</p></div>
                 </div>
             </div>
-            <div class="d-between"><p>introdu miza</p> <input type="numer" placeholder="20RON"></div>
+             <div><p>introdu miza</p> 
+             		<form class="form-ticket">
+                <input type="number" min="${MIN_BET_AMOUNT}" max="${MAX_BET_AMOUNT}" placeholder="${MIN_BET_AMOUNT}" id="bet-amount" class="form__field" disabled>            
+                  <div>RON</div>
+                </form>
+             
+             
+             </div>
+            <p class="error-message" style="color:red; display:none;">Valoarea pariului trebuie să fie între 20 și 2000 RON.</p>
           </div>
           <div class="footer-ticket">
-          <p>castig potential </p>
-          <p>320ron</p>
+          <p id="potentialWinning">afla castigul potential </br> Selecteaza o cota</p>
           </div>
         </div>
     </div>
 `);
     container.append(card);
+    // const potentialWinning = (
+    //   parseFloat(match.boostOdds["1"]) * MIN_BET_AMOUNT
+    // ).toFixed(0);
+    // card.find("#potentialWinning").text(`castig potential: ${potentialWinning} RON`);
   });
 
-  container.on("click", ".bet-option", function () {
-    if (isModalOpen) return;
-    const matchId = $(this).data("id");
-    const choice = $(this).data("choice");
-    const selectedMatch = matchesData[matchId];
-    if (selectedMatch) {
-      const teams = `${selectedMatch.teamsA} vs ${selectedMatch.teamsB}`;
-      const odds = selectedMatch.odds[choice];
-      const boostOdds = selectedMatch.boostOdds[choice];
-      selectBet(
-        teams,
-        choice,
-        odds,
-        boostOdds,
-        matchId,
-        selectedMatch.sessionId
-      );
+
+ // Event listener for bet option clicks
+
+ container.on("click", ".bet-option", function () {
+  const matchId = $(this).data("id");
+  const choice = $(this).data("choice");
+  const selectedMatch = matchesData[matchId];
+  
+  // Remove previously selected bets and add selected class to the current one
+  $(this).closest('.main-card').find('.bet-option').removeClass('selected-bet');
+  $(this).addClass('selected-bet');
+  
+  if (selectedMatch) {
+    const boostOdds = selectedMatch.boostOdds[choice];
+    const numericOdds = parseFloat(boostOdds);
+
+    // Enable the bet input when an odd is selected
+    const betAmountInput = $(this).closest('.main-card').find(`#bet-amount`);
+    betAmountInput.prop('disabled', false);
+
+    let betAmount = parseFloat(betAmountInput.val()) || MIN_BET_AMOUNT;
+
+    // Function to update the potential winnings
+    function updatePotentialWinning(betAmountToUse) {
+      const potentialWinning = (numericOdds * betAmountToUse).toFixed(0);
+      $(this).closest('.main-card').find(`#potentialWinning`).html(`castig potential:<br>${potentialWinning} RON`);
     }
-  });
+
+    // Initial calculation based on the bet amount
+    if (betAmount < MIN_BET_AMOUNT) {
+      updatePotentialWinning.call(this, MIN_BET_AMOUNT);
+      $(this).closest('.main-card').find('.error-message').show();
+    } else if (betAmount > MAX_BET_AMOUNT) {
+      updatePotentialWinning.call(this, MAX_BET_AMOUNT);
+      $(this).closest('.main-card').find('.error-message').show();
+    } else {
+      updatePotentialWinning.call(this, betAmount);
+      $(this).closest('.main-card').find('.error-message').hide();
+    }
+
+    // Function to handle bet amount changes
+    function handleBetAmountChange() {
+      const inputBetAmount = parseFloat(betAmountInput.val()) || MIN_BET_AMOUNT;
+      
+      if (inputBetAmount < MIN_BET_AMOUNT) {
+        // If below minimum, calculate with MIN_BET_AMOUNT and show error
+        updatePotentialWinning.call(this, MIN_BET_AMOUNT);
+        $(this).closest('.main-card').find('.error-message').show();
+      } else if (inputBetAmount > MAX_BET_AMOUNT) {
+        // If above maximum, calculate with MAX_BET_AMOUNT and show error
+        updatePotentialWinning.call(this, MAX_BET_AMOUNT);
+        $(this).closest('.main-card').find('.error-message').show();
+      } else {
+        // If within valid range, use the entered value
+        updatePotentialWinning.call(this, inputBetAmount);
+        $(this).closest('.main-card').find('.error-message').hide();
+      }
+    }
+
+    // Listen to input changes to update potential winnings
+    betAmountInput.off("input").on("input", handleBetAmountChange.bind(this));
+
+    // Handle changes from +1 and -1 buttons (if they exist)
+    $(this).closest('.main-card').find('.increment-button, .decrement-button').off("click").on("click", function () {
+      handleBetAmountChange.call(this);
+    }.bind(this));
+  }
+});
+
+
 };
+  
+
+
+
+
 $(document).ready(renderMatches);

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetBet Authentication Example</title>
+    <style>
+        #login-button, #logout-button, #simulate-message {
+            display: none; /* Initially hide buttons */
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #logout-button {
+            background-color: #dc3545; /* Red button for logout */
+        }
+        #simulate-message {
+            background-color: #28a745; /* Green button for simulating message */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>NetBet Authentication Example</h1>
+
+    <!-- Buttons to show/hide based on login status -->
+    <button id="login-button">Login</button>
+    <button id="logout-button">Logout</button>
+    <button id="simulate-message">Simulate Message from iFrame</button>
+
+    <!-- iFrame (commented out due to CSP issues) -->
+    <!-- <div class="iframe-wrap" style="z-index:39;">
+        <iframe id="advent_iframe" width="100%" height="850px" style="border: 0px none; display: block; margin-left: auto; margin-right: auto;" 
+        src="https://casino.netbet.ro/test"></iframe>
+    </div> -->
+
+    <script>
+        let messageListenerAdded = false;
+
+        // Simulating user and netbet_id for testing purposes
+        let username = "";  // Replace with actual logic to get username
+        let netbet_id;      // Replace with actual logic to get netbet_id
+
+        // Function to send authentication status to the iframe
+        async function sendMessage() {
+            try {
+                const isLoggedIn = !!(username && !isNaN(netbet_id)); // Check if logged in
+                const message = {
+                    event: "auth_status",
+                    details: {
+                        isLoggedIn: isLoggedIn,
+                        username: isLoggedIn ? username : null,
+                        netbet_id: isLoggedIn ? netbet_id : null,
+                    },
+                    source: "game.netbet",
+                };
+                console.log("Message sent:", message);
+            } catch (error) {
+                console.error("Error sending authentication message:", error);
+            }
+        }
+
+        // Function to listen to messages from iframe (simulated)
+        function listenMessage() {
+            if (messageListenerAdded) return;  // Avoid adding multiple listeners
+            try {
+                const trustedOrigins = ["https://casino.netbet.ro", "https://casino-promo.netbet.ro",];
+                window.addEventListener("message", function (event) {
+                    // Ensure the message comes from a trusted origin
+                    if (!trustedOrigins.includes(event.origin)) {
+                        console.log("Untrusted origin:", event.origin);
+                        return;
+                    }
+                    const message = event.data;
+                    if (message && typeof message === "object" && message.event === "auth_status") {
+                        const isLoggedIn = message.details.isLoggedIn;
+                        console.log("Authentication status received:", isLoggedIn);
+                        // Show or hide buttons based on login state
+                        showButtonsBasedOnLogin(isLoggedIn);
+                    }
+                }, false);
+
+                messageListenerAdded = true;
+            } catch (error) {
+                console.error("Error setting up message listener:", error);
+            }
+        }
+
+        // Function to simulate message reception from the iframe
+        function simulateIframeMessage() {
+            const message = {
+                event: "auth_status",
+                details: {
+                    isLoggedIn: true, // Simulate user being logged in
+                    username: "testUser",
+                    netbet_id: 123456,
+                },
+                source: "iframe.simulation",
+            };
+            window.dispatchEvent(new MessageEvent("message", {
+                data: message,
+                origin: "https://casino.netbet.ro" // Simulated origin
+            }));
+        }
+
+        // Ensure iframe is fully loaded before sending the message
+        document.getElementById("simulate-message").addEventListener("click", function() {
+            simulateIframeMessage(); // Simulate receiving a message from the iframe
+        });
+
+        // Ensure everything is ready after the document has fully loaded
+        document.addEventListener("DOMContentLoaded", function() {
+            listenMessage();  // Start listening for messages
+            sendMessage(); // Initial send message
+        });
+
+        // Function to update buttons visibility based on login state
+        function showButtonsBasedOnLogin(isLoggedIn) {
+            const loginButton = document.getElementById("login-button");
+            const logoutButton = document.getElementById("logout-button");
+            
+            if (isLoggedIn) {
+                loginButton.style.display = "none";  // Hide login button
+                logoutButton.style.display = "block";  // Show logout button
+            } else {
+                loginButton.style.display = "block";  // Show login button
+                logoutButton.style.display = "none";  // Hide logout button
+            }
+        }
+
+    </script>
+
+</body>
+</html>

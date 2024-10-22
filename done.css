@@ -1,0 +1,91 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+    height: 100vh;
+    font-size: 110%;
+    font-weight: 600;
+    font-family: sans-serif;
+}
+
+.card-content {
+  background: rgb(125, 125, 245);
+  max-width: 360px;
+  min-width: 360px;
+  text-align: center;
+}
+
+.header-ticket,
+.footer-ticket {
+  background: red;
+  padding: 20px 0;
+  font-size: 1.4em;
+  text-transform: uppercase;
+}
+
+.d-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.body-ticket {
+  padding: 10px 20px;
+}
+
+.body-ticket > div,
+.footer-ticket {
+  margin: 15px 0;
+}
+
+.body-ticket {
+  background: green;
+  margin: 10px 0;
+}
+
+.footer-ticket {
+  background: brown;
+}
+
+.bet-option > div {
+  padding: 10px;
+  background: red;
+}
+
+.bet-option {
+  background: blue;
+  display: flex;
+  flex-direction: row;
+}
+.underline {
+  text-decoration: line-through;
+}
+
+.insert-ticket {
+    z-index: 5;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+.c-ticket {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.test {
+    position: relative;
+
+}
+
+.test2 {
+    overflow: hidden;
+}
+

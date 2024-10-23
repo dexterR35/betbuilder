@@ -143,7 +143,7 @@ const renderMatches = async () => {
               <div class="teams"><img src="${teamBImage}" alt="teamB" class="teamB"><p>${teamBNameSplit}</p></div>
             </div>
             <div>
-                <p>${match.startAt}</p> <p>${match.date}</p>
+                <p>ora: ${match.startAt}</p> <p>${match.date}</p>
             </div>
             <div class="bet-ticket">
                 <div class="bet-option" data-id="${match.id}" data-choice="1">
@@ -158,11 +158,8 @@ const renderMatches = async () => {
             </div>
              <div><p>introdu miza</p> 
              		<form class="form-ticket">
-                <input type="number" min="${MIN_BET_AMOUNT}" max="${MAX_BET_AMOUNT}" placeholder="${MIN_BET_AMOUNT}" id="bet-amount" class="form__field" disabled>            
-                  <div>RON</div>
+                <input type="number" min="${MIN_BET_AMOUNT}" max="${MAX_BET_AMOUNT}" placeholder="${MIN_BET_AMOUNT} RON" id="bet-amount" class="form__field" disabled>            
                 </form>
-             
-             
              </div>
             <p class="error-message" style="color:red; display:none;">Valoarea pariului trebuie să fie între 20 și 2000 RON.</p>
           </div>
@@ -204,7 +201,7 @@ const renderMatches = async () => {
     // Function to update the potential winnings
     function updatePotentialWinning(betAmountToUse) {
       const potentialWinning = (numericOdds * betAmountToUse).toFixed(0);
-      $(this).closest('.main-card').find(`#potentialWinning`).html(`castig potential:<br>${potentialWinning} RON`);
+      $(this).closest('.main-card').find(`#potentialWinning`).html(`castig potential <br> <p>${potentialWinning} RON</p>`);
     }
 
     // Initial calculation based on the bet amount
@@ -242,17 +239,29 @@ const renderMatches = async () => {
     betAmountInput.off("input").on("input", handleBetAmountChange.bind(this));
 
     // Handle changes from +1 and -1 buttons (if they exist)
-    $(this).closest('.main-card').find('.increment-button, .decrement-button').off("click").on("click", function () {
-      handleBetAmountChange.call(this);
-    }.bind(this));
+    // $(this).closest('.main-card').find('.increment-button, .decrement-button').off("click").on("click", function () {
+    //   handleBetAmountChange.call(this);
+    // }.bind(this));
   }
 });
 
 
 };
+
+
+function flipdownJs() {
+  const toDayFromNow = (new Date("Oct 24, 2024 23:59:59").getTime() / 1000) + (3600 / 60 / 60 / 24) - 1;
+  const flipdown = new FlipDown(toDayFromNow)
+  .start()
+  .ifEnded(() => {
+      document.querySelector(".flipdown").innerHTML = `<h2>Oferta a expirat</h2>`;
+  });
+}
   
 
 
 
-
-$(document).ready(renderMatches);
+$(document).ready(function(){
+  flipdownJs();
+  renderMatches();
+});

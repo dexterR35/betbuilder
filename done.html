@@ -3,25 +3,79 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="./done.css">
+    <script src="https://pbutcher.uk/flipdown/js/flipdown/flipdown.js"></script>
+    <link rel="stylesheet" href="./done.css" />
+    <link
+      href="https://pbutcher.uk/flipdown/css/flipdown/flipdown.css"
+      rel="stylesheet"
+    />
     <title>Document</title>
   </head>
   <body>
-    <div class="c-ticket">
+    <canvas id="particle-canvas"></canvas>
+    <div class="c-app">
+      <div class="c-wrapp">
+      <div class="test1">
+        <img src="./assets/man.webp" alt="man" class="test1">
+                </div>
+      <div class="c-ticket">
+    
         <div class="test2">
-
-
-            <img src="./assets/iphone-frame.png" alt="" class="test">
-      
+          <img src="./assets/phone.webp" alt="" class="test" />
         </div>
-      <div class="insert-ticket" id="insert-ticket">
+        <div class="insert-ticket" id="insert-ticket"></div>
       </div>
+    
     </div>
-    <img src="https://drive.usercontent.google.com/download?id=1cyWL9AUz9_jAJAaixuT66dRue7ZwyyI5&export=view&authuser=0" alt="Google Drive Image" />
+    <div class="count-down">
+      <div class="flipdown" id="flipdown"></div>
+    </div>
+  </div>
+    <style>
+      .flipdown.flipdown__theme-dark .rotor-bottom,
+      .flipdown.flipdown__theme-dark .rotor-leaf-rear,
+      .flipdown.flipdown__theme-dark .rotor,
+      .flipdown.flipdown__theme-dark .rotor-top,
+      .flipdown.flipdown__theme-dark .rotor-leaf-front {
+        color: var(--footer_color);
+        background-color: var(--_lightGray);
+      }
 
-
+      .count-down {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width:fit-content;
+        /* height: 378px;
+        margin: auto;
+        padding: 20px; */
+      }
+      .count-down .flipdown {
+        /* margin: auto;
+        width: 600px;
+        margin-top: 30px; */
+      }
+      .count-down h1 {
+        text-align: center;
+        font-weight: 400;
+        font-size: 3em;
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+      @media (max-width: 550px) {
+        .count-down {
+          width: 100%;
+          height: 362px;
+        }
+        .count-down h1 {
+          font-size: 2.5em;
+        }
+      }
+    </style>
 
     <script src="./done.js"></script>
+    <script src="./particles.js"></script>
   </body>
 </html>
